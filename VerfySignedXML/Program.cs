@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Xml;
+using VerfySignedXML;
 
 public class VerifySignedXML
 {
@@ -56,12 +57,15 @@ public class VerifySignedXML
             throw new ArgumentException("x509");
         }
 
-        SignedXml signedXml = new SignedXml(xmlDoc);
+        //SignedXml signedXml = new SignedXml(xmlDoc);
+        PrefixedSignedXML signedXml = new PrefixedSignedXML(xmlDoc);
 
         RSACryptoServiceProvider privateKey = (RSACryptoServiceProvider)x509.PrivateKey;
         RSACryptoServiceProvider privateKey1 = new RSACryptoServiceProvider();
         privateKey1.ImportParameters(privateKey.ExportParameters(true));
         signedXml.SigningKey = privateKey1;
+
+        signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
 
         Reference reference = new Reference();
         reference.Uri = "#" + uri;
@@ -75,12 +79,12 @@ public class VerifySignedXML
         keyInfo.AddClause(new KeyInfoX509Data(x509));
         signedXml.KeyInfo = keyInfo;
 
-        signedXml.ComputeSignature();
+        //signedXml.ComputeSignature();
+        signedXml.ComputeSignature("dsig");
 
-        XmlElement xmlDigitalSignature = signedXml.GetXml();
+        XmlElement xmlDigitalSignature = signedXml.GetXml("dsig");
 
         xmlDoc.DocumentElement.AppendChild(xmlDoc.ImportNode(xmlDigitalSignature, true));
-
     }
 
     public static void verfy(string signedXmlFilename)
@@ -111,7 +115,7 @@ public class VerifySignedXML
     public static Boolean VerifyXml(XmlDocument Doc)
     {
         SignedXml signedXml = new SignedXml(Doc);
-        XmlNodeList nodeList = Doc.GetElementsByTagName("Signature");
+        XmlNodeList nodeList = Doc.GetElementsByTagName("Signature", "*");
 
         if (nodeList.Count <= 0)
         {
@@ -121,8 +125,8 @@ public class VerifySignedXML
         {
             throw new CryptographicException("Verification failed: More that one signature was found for the document.");
         }
-
-        signedXml.LoadXml((XmlElement)nodeList[0]);
+        XmlElement elm = (XmlElement)nodeList[0];
+        signedXml.LoadXml(elm);
         return signedXml.CheckSignature();
     }
 }
