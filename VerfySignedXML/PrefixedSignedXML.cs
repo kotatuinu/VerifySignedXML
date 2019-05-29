@@ -31,19 +31,20 @@ namespace VerfySignedXML
             }
             if (this.SignedInfo.SignatureMethod == null)
             {
-                if (signingKey is DSA)
+                if (!(signingKey is DSA))
+                {
+                    if (!(signingKey is RSA))
+                    {
+                        throw new CryptographicException("Cryptography_Xml_CreatedKeyFailed");
+                    }
+                    if (this.SignedInfo.SignatureMethod == null)
+                    {
+                        this.SignedInfo.SignatureMethod = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+                    }
+                }
+                else
                 {
                     this.SignedInfo.SignatureMethod = "http://www.w3.org/2000/09/xmldsig#dsa-sha1";
-                }
-
-                if (!(signingKey is RSA))
-                {
-                    throw new CryptographicException("Cryptography_Xml_CreatedKeyFailed");
-                }
-
-                if (this.SignedInfo.SignatureMethod == null)
-                {
-                    this.SignedInfo.SignatureMethod = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
                 }
             }
             SignatureDescription description = CryptoConfig.CreateFromName(this.SignedInfo.SignatureMethod) as SignatureDescription;
