@@ -79,10 +79,10 @@ public class VerifySignedXML
         keyInfo.AddClause(new KeyInfoX509Data(x509));
         signedXml.KeyInfo = keyInfo;
 
-        //signedXml.ComputeSignature();
         signedXml.ComputeSignature("dsig");
-
-        XmlElement xmlDigitalSignature = signedXml.GetXml("dsig");
+        XmlElement xmlDigitalSignature = signedXml.GetXml();
+        //signedXml.ComputeSignature();
+        //XmlElement xmlDigitalSignature = signedXml.GetXml();
 
         xmlDoc.DocumentElement.AppendChild(xmlDoc.ImportNode(xmlDigitalSignature, true));
     }

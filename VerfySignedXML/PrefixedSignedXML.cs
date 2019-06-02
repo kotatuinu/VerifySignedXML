@@ -21,6 +21,13 @@ namespace VerfySignedXML
             : base()
         { }
 
+        public string prefix { get; private set; }
+
+        public new void ComputeSignature()
+        {
+            prefix = "";
+            base.ComputeSignature();
+        }
         public void ComputeSignature(string prefix)
         {
             this.BuildDigestedReferences();
@@ -59,11 +66,12 @@ namespace VerfySignedXML
             }
             this.GetC14NDigest(hash, prefix);
             this.m_signature.SignatureValue = description.CreateFormatter(signingKey).CreateSignature(hash);
+            this.prefix = prefix;
         }
 
-        public XmlElement GetXml(string prefix)
+        public new XmlElement GetXml()
         {
-            XmlElement e = this.GetXml();
+            XmlElement e = base.GetXml();
             SetPrefix(prefix, e);
             return e;
         }
@@ -84,7 +92,7 @@ namespace VerfySignedXML
 
             Transform canonicalizationMethodObject = this.SignedInfo.CanonicalizationMethodObject;
             SetPrefix(prefix, document.DocumentElement);
-            canonicalizationMethodObject.LoadInput(document);
+             canonicalizationMethodObject.LoadInput(document);
             return canonicalizationMethodObject.GetDigestedOutput(hash);
         }
 
