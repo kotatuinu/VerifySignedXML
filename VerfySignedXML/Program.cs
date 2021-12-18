@@ -15,12 +15,33 @@ public class VerifySignedXML
     //  ５：署名済XMLファイル（出力）
     public static void Main(String[] args)
     {
-        if (args.Length != 5)
+        switch (args.Length)
         {
-            return;
+            case 1:
+                // 署名検証
+                verfy(args[0]);
+                break;
+
+            case 5:
+                // 署名付与→署名検証
+                sign(args[0], args[1], args[2], args[3], args[4]);
+                verfy(args[4]);
+                break;
+
+            default:
+                // Usage
+                string[] usage = {
+                    "署名付与・検証ツール",
+                    "usage:",
+                    "\t署名付与：>.\\VerfySignedXML.exe <PKCS12ファイル名> <PKCS12パスワード> <署名対象XMLファイル名> <署名付与対象ID属性値> <出力ファイル名>",
+                    "\t署名検証：>.\\VerfySignedXML.exe <署名検証XMLファイル>",
+                        };
+                foreach (var s in usage)
+                {
+                    Console.WriteLine(s);
+                }
+                break;
         }
-        sign(args[0], args[1], args[2], args[3], args[4]);
-        verfy(args[4]);
     }
 
     public static void sign(String filename, string password, string xmlFilename, string id, string signedXmlFilename)
@@ -57,15 +78,10 @@ public class VerifySignedXML
             throw new ArgumentException("x509");
         }
 
-        //SignedXml signedXml = new SignedXml(xmlDoc);
         PrefixedSignedXML signedXml = new PrefixedSignedXML(xmlDoc);
-
-        RSACryptoServiceProvider privateKey = (RSACryptoServiceProvider)x509.PrivateKey;
-        RSACryptoServiceProvider privateKey1 = new RSACryptoServiceProvider();
-        privateKey1.ImportParameters(privateKey.ExportParameters(true));
-        signedXml.SigningKey = privateKey1;
-
+        signedXml.SigningKey = x509.GetRSAPrivateKey();
         signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
+        signedXml.SignedInfo.SignatureMethod = SignedXml.XmlDsigRSASHA256Url;
 
         Reference reference = new Reference();
         reference.Uri = "#" + uri;
@@ -81,8 +97,6 @@ public class VerifySignedXML
 
         signedXml.ComputeSignature("dsig");
         XmlElement xmlDigitalSignature = signedXml.GetXml();
-        //signedXml.ComputeSignature();
-        //XmlElement xmlDigitalSignature = signedXml.GetXml();
 
         xmlDoc.DocumentElement.AppendChild(xmlDoc.ImportNode(xmlDigitalSignature, true));
     }

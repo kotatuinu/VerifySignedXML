@@ -38,20 +38,29 @@ namespace VerfySignedXML
             }
             if (this.SignedInfo.SignatureMethod == null)
             {
-                if (!(signingKey is DSA))
+                // SignatureMethodが未設定で、SigningKeyの種類によるデフォルト値を設定
+                if (signingKey is DSA)
                 {
-                    if (!(signingKey is RSA))
-                    {
-                        throw new CryptographicException("Cryptography_Xml_CreatedKeyFailed");
-                    }
-                    if (this.SignedInfo.SignatureMethod == null)
-                    {
-                        this.SignedInfo.SignatureMethod = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
-                    }
+                    // "http://www.w3.org/2000/09/xmldsig#dsa-sha1";
+                    this.SignedInfo.SignatureMethod = XmlDsigDSAUrl;
+                }
+                else if (signingKey is RSA)
+                {
+                    // "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+                    this.SignedInfo.SignatureMethod = XmlDsigRSASHA1Url;
+
+                    // "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+                    //this.SignedInfo.SignatureMethod = XmlDsigRSASHA256Url;
+
+                    // "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384";
+                    //this.SignedInfo.SignatureMethod = XmlDsigRSASHA384Url;
+
+                    // "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512";
+                    //this.SignedInfo.SignatureMethod = XmlDsigRSASHA512Url;
                 }
                 else
                 {
-                    this.SignedInfo.SignatureMethod = "http://www.w3.org/2000/09/xmldsig#dsa-sha1";
+                    throw new CryptographicException("Cryptography_Xml_CreatedKeyFailed");
                 }
             }
             SignatureDescription description = CryptoConfig.CreateFromName(this.SignedInfo.SignatureMethod) as SignatureDescription;
@@ -92,7 +101,7 @@ namespace VerfySignedXML
 
             Transform canonicalizationMethodObject = this.SignedInfo.CanonicalizationMethodObject;
             SetPrefix(prefix, document.DocumentElement);
-             canonicalizationMethodObject.LoadInput(document);
+            canonicalizationMethodObject.LoadInput(document);
             return canonicalizationMethodObject.GetDigestedOutput(hash);
         }
 
