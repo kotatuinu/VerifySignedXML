@@ -48,17 +48,20 @@ public class VerifySignedXML
     {
         try
         {
-            XmlDocument xmlDoc = new XmlDocument();
+            var xmlDoc = new XmlDocument();
             xmlDoc.PreserveWhitespace = true;
             xmlDoc.Load(xmlFilename);
-            XmlNodeList list = xmlDoc.SelectNodes(string.Format(@"//*[@id='{0}']", id));
+            var list = xmlDoc.SelectNodes(string.Format(@"//*[@id='{0}']", id));
             if (list.Count == 0)
             {
                 return;
             }
 
-            X509Certificate2 x509 = new X509Certificate2(filename, password, X509KeyStorageFlags.Exportable);
-            SignXml(xmlDoc, x509, id);
+            var x509 = new X509Certificate2(filename, password, X509KeyStorageFlags.Exportable);
+            var signedXml = SignXml(xmlDoc, x509, id);
+
+            list.Item(list.Count-1).AppendChild(xmlDoc.ImportNode(signedXml, true));
+
             xmlDoc.Save(signedXmlFilename);
         }
         catch (Exception e)
@@ -67,7 +70,7 @@ public class VerifySignedXML
         }
     }
 
-    public static void SignXml(XmlDocument xmlDoc, X509Certificate2 x509, string uri)
+    public static XmlElement SignXml(XmlDocument xmlDoc, X509Certificate2 x509, string uri)
     {
         if (xmlDoc == null)
         {
@@ -78,38 +81,36 @@ public class VerifySignedXML
             throw new ArgumentException("x509");
         }
 
-        PrefixedSignedXML signedXml = new PrefixedSignedXML(xmlDoc);
+        var signedXml = new PrefixedSignedXML(xmlDoc);
         signedXml.SigningKey = x509.GetRSAPrivateKey();
         signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
         signedXml.SignedInfo.SignatureMethod = SignedXml.XmlDsigRSASHA256Url;
 
-        Reference reference = new Reference();
+        var reference = new Reference();
         reference.Uri = "#" + uri;
 
-        XmlDsigEnvelopedSignatureTransform env = new XmlDsigEnvelopedSignatureTransform();
+        var env = new XmlDsigEnvelopedSignatureTransform();
         reference.AddTransform(env);
 
         signedXml.AddReference(reference);
 
-        KeyInfo keyInfo = new KeyInfo();
+        var keyInfo = new KeyInfo();
         keyInfo.AddClause(new KeyInfoX509Data(x509));
         signedXml.KeyInfo = keyInfo;
 
         signedXml.ComputeSignature("dsig");
-        XmlElement xmlDigitalSignature = signedXml.GetXml();
-
-        xmlDoc.DocumentElement.AppendChild(xmlDoc.ImportNode(xmlDigitalSignature, true));
+        return signedXml.GetXml();
     }
 
     public static void verfy(string signedXmlFilename)
     {
         try
         {
-            XmlDocument xmlDoc = new XmlDocument();
+            var xmlDoc = new XmlDocument();
             xmlDoc.PreserveWhitespace = true;
             xmlDoc.Load(signedXmlFilename);
 
-            bool result = VerifyXml(xmlDoc);
+            var result = VerifyXml(xmlDoc);
             if (result)
             {
                 Console.WriteLine("The XML signature is valid.");
@@ -128,8 +129,8 @@ public class VerifySignedXML
 
     public static Boolean VerifyXml(XmlDocument Doc)
     {
-        SignedXml signedXml = new SignedXml(Doc);
-        XmlNodeList nodeList = Doc.GetElementsByTagName("Signature", "*");
+        var signedXml = new SignedXml(Doc);
+        var nodeList = Doc.GetElementsByTagName("Signature", "*");
 
         if (nodeList.Count <= 0)
         {
@@ -139,7 +140,7 @@ public class VerifySignedXML
         {
             throw new CryptographicException("Verification failed: More that one signature was found for the document.");
         }
-        XmlElement elm = (XmlElement)nodeList[0];
+        var elm = (XmlElement)nodeList[0];
         signedXml.LoadXml(elm);
         return signedXml.CheckSignature();
     }

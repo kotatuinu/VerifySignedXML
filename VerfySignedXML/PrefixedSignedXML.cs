@@ -31,7 +31,7 @@ namespace VerfySignedXML
         public void ComputeSignature(string prefix)
         {
             this.BuildDigestedReferences();
-            AsymmetricAlgorithm signingKey = this.SigningKey;
+            var signingKey = this.SigningKey;
             if (signingKey == null)
             {
                 throw new CryptographicException("Cryptography_Xml_LoadKeyFailed");
@@ -80,26 +80,26 @@ namespace VerfySignedXML
 
         public new XmlElement GetXml()
         {
-            XmlElement e = base.GetXml();
+            var e = base.GetXml();
             SetPrefix(prefix, e);
             return e;
         }
 
         private void BuildDigestedReferences()
         {
-            Type t = typeof(SignedXml);
-            MethodInfo m = t.GetMethod("BuildDigestedReferences", BindingFlags.NonPublic | BindingFlags.Instance);
+            var t = typeof(SignedXml);
+            var m = t.GetMethod("BuildDigestedReferences", BindingFlags.NonPublic | BindingFlags.Instance);
             m.Invoke(this, new object[] { });
         }
 
         private byte[] GetC14NDigest(HashAlgorithm hash, string prefix)
         {
-            XmlDocument document = new XmlDocument();
+            var document = new XmlDocument();
             document.PreserveWhitespace = true;
-            XmlElement e = this.SignedInfo.GetXml();
+            var e = this.SignedInfo.GetXml();
             document.AppendChild(document.ImportNode(e, true));
 
-            Transform canonicalizationMethodObject = this.SignedInfo.CanonicalizationMethodObject;
+            var canonicalizationMethodObject = this.SignedInfo.CanonicalizationMethodObject;
             SetPrefix(prefix, document.DocumentElement);
             canonicalizationMethodObject.LoadInput(document);
             return canonicalizationMethodObject.GetDigestedOutput(hash);
@@ -108,7 +108,9 @@ namespace VerfySignedXML
         private void SetPrefix(string prefix, XmlNode node)
         {
             foreach (XmlNode n in node.ChildNodes)
+            {
                 SetPrefix(prefix, n);
+            }
             node.Prefix = prefix;
         }
     }

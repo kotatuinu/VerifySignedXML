@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?> 
+<root>
+	<item1>
+		<item1-1>aaaa</item1-1>
+	    <creditcard id="xxxx">
+	        <number>19834209</number>
+	        <expiry>02/02/2002</expiry>
+	    </creditcard>
+	</item1>
+</root>
